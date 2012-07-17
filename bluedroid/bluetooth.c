@@ -42,11 +42,16 @@
 #define MIN(x,y) (((x)<(y))?(x):(y))
 
 
+#ifndef BLUEDROID_NO_RFKILL
 static int rfkill_id = -1;
 static char *rfkill_state_path = NULL;
+#else
+static int rfkill_state = 0;
+#endif
 
 
 static int init_rfkill() {
+#ifndef BLUEDROID_NO_RFKILL
     char path[64];
     char buf[16];
     int fd;
@@ -68,10 +73,12 @@ static int init_rfkill() {
     }
 
     asprintf(&rfkill_state_path, "/sys/class/rfkill/rfkill%d/state", rfkill_id);
+#endif
     return 0;
 }
 
 static int check_bluetooth_power() {
+#ifndef BLUEDROID_NO_RFKILL
     int sz;
     int fd = -1;
     int ret = -1;
@@ -106,9 +113,13 @@ static int check_bluetooth_power() {
 out:
     if (fd >= 0) close(fd);
     return ret;
+#else
+    return rfkill_state;
+#endif
 }
 
 static int set_bluetooth_power(int on) {
+#ifndef BLUEDROID_NO_RFKILL
     int sz;
     int fd = -1;
     int ret = -1;
@@ -135,6 +146,10 @@ static int set_bluetooth_power(int on) {
 out:
     if (fd >= 0) close(fd);
     return ret;
+#else
+    rfkill_state = on;
+    return 0;
+#endif
 }
 
 static inline int create_hci_sock() {
